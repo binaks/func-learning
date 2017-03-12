@@ -352,7 +352,3 @@ Proof.
       reflexivity.
     + reflexivity.
 Qed.
-
-
-
-
