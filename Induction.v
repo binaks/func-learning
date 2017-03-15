@@ -102,8 +102,14 @@ Proof.
   - simpl. reflexivity.
   - simpl. rewrite <- plus_n_Sm.
     assert (H: n + m = m + n).
-      { destruct n. simpl. rewrite <- plus_n_0.
-        reflexivity. rewrite <- plus_n_Sm.
-        simpl.
-        
+    { rewrite -> plus_comm. reflexivity. }
+    rewrite -> plus_assoc'. rewrite -> H.
+    rewrite -> plus_assoc'. reflexivity.
+Qed.
 
+Theorem mult_comm : forall m n : nat,
+  m * n = n * m.
+Proof.
+  intros m n. induction n as [|n' IHn'].
+  - simpl. rewrite -> mult_0_r. reflexivity.
+  - 
