@@ -207,8 +207,190 @@ Proof. reflexivity. Qed.
 Example test_count2: count 6 [1;2;3;1;4;1] = 0.
 Proof. reflexivity. Qed.
 
-Definition sum : bag -> bag -> bag := bag (
-  
+Definition sum : bag -> bag -> bag :=
+  app.
+
+Example test_sum1: count 1 (sum [1;2;3] [1;4;1]) = 3.
+Proof. reflexivity. Qed.
+
+Definition add (v:nat) (s:bag) : bag :=
+  v :: s.
+
+Example test_add1: count 1 (add 1 [1;4;1]) = 3.
+Proof. reflexivity. Qed.
+
+Example test_add2: count 5 (add 1 [1;4;1]) = 0.
+Proof. reflexivity. Qed.
+
+Definition member (v:nat) (s:bag) : bool :=
+  match (count v s) with
+  | 0 => false
+  | S n => true
+  end.
+
+Example test_member1: member 1 [1;4;1] = true.
+Proof. reflexivity. Qed.
+
+Example test_member2: member 2 [1;4;1] = false.
+Proof. reflexivity. Qed.
+
+Fixpoint remove_one (v:nat) (s:bag) : bag :=
+  match s with
+  | nil => nil
+  | n :: m => match beq_nat v n with
+              | true => m
+              | false => n :: (remove_one v m)
+              end
+  end.
+
+Example test_remove_one1:
+  count 5 (remove_one 5 [2;1;5;4;1]) = 0.
+Proof. reflexivity. Qed.
+
+Example test_remove_one2:
+  count 5 (remove_one 5 [2;1;4;1]) = 0.
+Proof. reflexivity. Qed.
+
+Example test_remove_one3:
+  count 4 (remove_one 5 [2;1;4;5;1;4]) = 2.
+Proof. reflexivity. Qed.
+
+Example test_remove_one4:
+  count 5 (remove_one 5 [2;1;5;4;5;1;4]) = 1.
+Proof. reflexivity. Qed.
+
+Fixpoint remove_all (v:nat) (s:bag) : bag :=
+  match s with
+  | nil => nil
+  | n :: m => match beq_nat v n with
+              | true => (remove_all v m)
+              | false => n :: (remove_all v m)
+              end
+  end.
+
+Example test_remove_all1: count 5 (remove_all 5 [2;1;5;4;1]) = 0.
+Proof. reflexivity. Qed.
+
+Example test_remove_all2: count 5 (remove_all 5 [2;1;4;1]) = 0.
+Proof. reflexivity. Qed.
+
+Example test_remove_all3: count 4 (remove_all 5 [2;1;4;5;1;4]) = 2.
+Proof. reflexivity. Qed.
+
+Example test_remove_all4: count 5 (remove_all 5 [2;1;5;4;5;1;4;5;1;4]) = 0.
+Proof. reflexivity. Qed.
+
+Fixpoint subset (s1:bag) (s2:bag) : bool :=
+  match s1 with
+  | nil => true
+  | n :: m => match (member n s2) with
+              | true => (subset m (remove_one n s2))
+              | false => false
+              end
+  end.
+
+Example test_subset1: subset [1;2] [2;1;4;1] = true.
+Proof. reflexivity. Qed.
+
+Example test_subset2: subset [1;2;2] [2;1;4;1] = false.
+Proof. reflexivity. Qed.
+
+Theorem nil_app : forall l:natlist,
+  [] ++ l = l.
+Proof. reflexivity. Qed.
+
+Theorem tl_length_pred : forall l:natlist,
+  pred (length l) = length (tl l).
+Proof.
+  intros l. destruct l as [| n l'].
+  - reflexivity.
+  - reflexivity. Qed.
+
+Theorem app_assoc : forall l1 l2 l3 : natlist,
+  (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3).
+Proof.
+  intros l1 l2 l3. induction l1 as [| n l1' IHl1'].
+  - reflexivity.
+  - simpl. rewrite -> IHl1'. reflexivity. Qed.
+
+Fixpoint rev (l:natlist) : natlist :=
+  match l with
+  | nil => nil
+  | h :: t => rev t ++ [h]
+  end.
+
+Example test_rev1: rev [1;2;3] = [3;2;1].
+Proof. reflexivity. Qed.
+
+Example test_rev2: rev nil = nil.
+Proof. reflexivity. Qed.
+
+Theorem app_length : forall l1 l2 : natlist,
+  length (l1 ++ l2) = (length l1) + (length l2).
+Proof.
+  intros l1 l2. induction l1 as [| n l1' IHl1'].
+  - reflexivity.
+  - simpl. rewrite -> IHl1'. reflexivity. Qed.
+
+Theorem rev_length : forall l : natlist,
+  length (rev l) = length l.
+Proof.
+  intros l. induction l as [| n l' IHl'].
+  - reflexivity.
+  - simpl. rewrite -> app_length, plus_comm.
+    simpl. rewrite -> IHl'. reflexivity. Qed.
+
+Theorem app_nil_r : forall l : natlist,
+  l ++ [] = l.
+Proof.
+  intros l. induction l as [| n l' IHl'].
+  - reflexivity.
+  - simpl. rewrite -> IHl'. reflexivity.
+Qed.
+
+Theorem rev_app_distr: forall l1 l2 : natlist,
+  rev (l1 ++ l2) = rev l2 ++ rev l1.
+Proof.
+  intros l1 l2. induction l1 as [| n l1' IHl1'].
+  - simpl. rewrite -> app_nil_r. reflexivity.
+  - simpl. rewrite -> IHl1'.
+    rewrite -> app_assoc. reflexivity.
+Qed.
+
+Theorem rev_involutive: forall l : natlist,
+  rev (rev l) = l.
+Proof.
+  intros l. induction l as [| n l IHl'].
+  - reflexivity.
+  - simpl. rewrite -> rev_app_distr.
+    rewrite -> IHl'. reflexivity.
+Qed.
+
+Theorem app_assoc4 : forall l1 l2 l3 l4 : natlist,
+  l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
+Proof.
+  intros l1 l2 l3 l4.
+  rewrite -> app_assoc. rewrite -> app_assoc.
+  reflexivity.
+Qed.
+
+Lemma nonzeros_app : forall l1 l2 : natlist,
+  nonzeros (l1 ++ l2) = (nonzeros l1) ++ (nonzeros l2).
+Proof.
+  intros l1 l2. induction l1 as [| n l1' IHl1'].
+  - reflexivity.
+  - 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
