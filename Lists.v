@@ -129,8 +129,10 @@ Proof. reflexivity. Qed.
 Fixpoint nonzeros (l:natlist) : natlist :=
   match l with
   | nil => nil
-  | 0 :: n => (nonzeros n)
-  | n :: m => n :: (nonzeros m)
+  | n :: m => match beq_nat n 0 with
+              | true => (nonzeros m)
+              | false => n :: (nonzeros m)
+              end
   end.
 
 Example test_nonzeros:
@@ -379,20 +381,41 @@ Lemma nonzeros_app : forall l1 l2 : natlist,
 Proof.
   intros l1 l2. induction l1 as [| n l1' IHl1'].
   - reflexivity.
-  - 
+  - simpl. rewrite -> IHl1'. destruct beq_nat.
+    + reflexivity.
+    + reflexivity.
 
+Fixpoint beq_natlist (l1 l2 : natlist) : bool :=
+  match l1 with
+  | nil => match l2 with
+           | nil => true
+           | o :: p => false
+           end
+  | n :: m => match (member n l2) with
+              | false => false
+              | true => (beq_natlist m (remove_one n l2))
+              end
+  end.
 
+Example test_beq_natlist1 :
+  (beq_natlist nil nil = true).
+Proof.
+  reflexivity. Qed.
 
+Example test_beq_natlist2 :
+  beq_natlist [1;2;3] [1;2;3] = true.
+Proof.
+  reflexivity. Qed.
 
+Example test_beq_natlist3 :
+  beq_natlist [1;2;3] [1;2;4] = false.
+Proof.
+  reflexivity. Qed.
 
-
-
-
-
-
-
-
-
-
-
-
+Theorem beq_natlist_refl : forall l:natlist,
+  true = beq_natlist l l.
+Proof.
+  intros l. induction l as [|n l' IHl'].
+  - reflexivity.
+  - simpl. rewrite -> IHl'. destruct beq_natlist.
+    + simpl.
