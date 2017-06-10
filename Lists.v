@@ -384,6 +384,7 @@ Proof.
   - simpl. rewrite -> IHl1'. destruct beq_nat.
     + reflexivity.
     + reflexivity.
+Qed.
 
 Fixpoint beq_natlist (l1 l2 : natlist) : bool :=
   match l1 with
@@ -416,17 +417,170 @@ Theorem beq_natlist_refl : forall l:natlist,
   true = beq_natlist l l.
 Proof.
   intros l. induction l as [|n l' IHl'].
-  - reflexivity.
-  - simpl. rewrite -> IHl'. destruct beq_natlist.
-    + simpl.
+  - simpl. reflexivity.
+  - simpl. destruct member.
+    + destruct beq_nat.
+      * rewrite <- IHl'. reflexivity.
+      * rewrite -> IHl'. 
+  Admitted.
 
+Theorem count_member_nonzero : forall(s:bag),
+  leb 1 (count 1 (1 :: s)) = true.
+Proof.
+  intros s. simpl. reflexivity. Qed.
 
+Theorem ble_n_Sn : forall n,
+  leb n (S n) = true.
+Proof.
+  intros n. induction n as [|n' IHn'].
+  - simpl. reflexivity.
+  - simpl. rewrite -> IHn'.
+    reflexivity. Qed.
 
+Theorem remove_decreases_count: forall (s:bag),
+  leb (count 0 (remove_one 0 s)) (count 0 s) = true.
+Proof.
+  intros s. induction s as [|n s' IHs'].
+  - simpl. reflexivity.
+  - destruct n as [|n'].
+    + simpl. rewrite -> ble_n_Sn. reflexivity.
+    + simpl. rewrite -> IHs'. reflexivity.
+Qed.
 
+Fixpoint nth_bad (l:natlist) (n:nat) : nat :=
+  match l with
+  | nil => 42
+  | a :: l' => match beq_nat n 0 with
+               | true => a
+               | false => nth_bad l' (pred n)
+               end
+  end.
 
+Inductive natoption : Type :=
+  | Some : nat -> natoption
+  | None : natoption.
 
+Fixpoint nth_error (l:natlist) (n:nat) : natoption :=
+  match l with
+  | nil => None
+  | a :: l' => match beq_nat n 0 with
+               | true => Some a
+               | false => nth_error l' (pred n)
+               end
+  end.
 
+Example test_nth_error1 : nth_error [4;5;6;7] 0 = Some 4.
+Proof.
+  reflexivity. Qed.
 
+Example test_nth_error2 : nth_error [4;5;6;7] 3 = Some 7.
+Proof.
+  reflexivity. Qed.
+
+Example test_nth_error3 : nth_error [4;5;6;7] 9 = None.
+Proof.
+  reflexivity. Qed.
+
+Fixpoint nth_error' (l:natlist) (n:nat) : natoption :=
+  match l with
+  | nil => None
+  | a :: l' => if beq_nat n 0 then Some a
+               else nth_error' l' (pred n)
+  end.
+
+Definition option_elim (d : nat) (o : natoption) : nat :=
+  match o with
+  | Some n' => n'
+  | None => d
+  end.
+
+Definition hd_error (l : natlist) : natoption :=
+  match l with
+  | nil => None
+  | h :: t => Some h
+  end.
+
+Example test_hd_error1 : hd_error [] = None.
+Proof.
+  reflexivity. Qed.
+
+Example test_hd_error2 : hd_error [1] = Some 1.
+Proof.
+  reflexivity. Qed.
+
+Example test_hd_error3 : hd_error [5;6] = Some 5.
+Proof.
+  reflexivity. Qed.
+
+Theorem option_elim_hd : forall (l:natlist) (default:nat),
+  hd default l = option_elim default (hd_error l).
+Proof.
+  intros l d. induction l as [|n l' IHl'].
+  - simpl. reflexivity.
+  - simpl. reflexivity.
+Qed.
+
+End NatList.
+
+Inductive id : Type :=
+  | Id : nat -> id.
+
+Definition beq_id (x1 x2 : id) :=
+  match x1, x2 with
+  | Id n1, Id n2 => beq_nat n1 n2
+  end.
+
+Theorem beq_id_refl : forall x, true = beq_id x x.
+Proof.
+  intros x. destruct x.
+  induction n as [|n' IHn'].
+  - simpl. reflexivity.
+  - simpl. rewrite <- beq_nat_refl. reflexivity.
+Qed.
+
+Module PartialMap.
+Export NatList.
+
+Inductive partial_map : Type :=
+  | empty : partial_map
+  | record : id -> nat -> partial_map -> partial_map.
+
+Definition update (d : partial_map)
+                  (x : id) (value : nat)
+                  : partial_map :=
+  record x value d.
+
+Fixpoint find (x : id) (d : partial_map) : natoption :=
+  match d with
+  | empty => None
+  | record y v d' => if beq_id x y
+                      then Some v
+                      else find x d'
+  end.
+
+Theorem update_eq :
+  forall(d : partial_map) (x : id) (v : nat),
+    find x (update d x v) = Some v.
+  Proof.
+    intros d x v.
+    simpl. rewrite <- beq_id_refl.
+    reflexivity.
+  Qed.
+
+Theorem update_neq :
+  forall(d : partial_map) (x : id) (v : nat),
+    find x (update d x v) = Some v.
+  Proof.
+    intros d x v.
+    simpl. rewrite <- beq_id_refl.
+    reflexivity.
+  Qed.
+
+End PartialMap.
+
+Inductive baz : Type :=
+  | Baz1 : baz -> baz
+  | Baz2 : baz -> bool -> baz.
 
 
 
