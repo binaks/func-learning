@@ -193,14 +193,20 @@ Definition snd {X Y : Type} (p: X * Y) : Y :=
   | (x, y) => y
   end.
 
+Fixpoint combine {X Y : Type} (lx : list X) (ly : list Y)
+           : list (X*Y) :=
+  match lx, ly with
+  | [], _ => []
+  | _, [] => []
+  | x :: tx, y :: ty => (x, y) :: (combine tx ty)
+  end.
+
 Fixpoint split {X Y : Type} (l : list (X * Y))
-               : (list X) * (list Y)
+               : (list X) * (list Y) :=
   match l with
-  | nil => nil * nil
-  | n :: m => match n with
-              | {X} => n :: 
-
-
+  | [] => ([],[])
+  | ([x;y],[tx;ty]) :: m => ([x :: tx], [y :: ty]) ++ (split m)
+  end.
 
 
 
